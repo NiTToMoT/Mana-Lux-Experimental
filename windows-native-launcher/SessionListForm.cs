@@ -37,6 +37,8 @@ internal sealed class SessionListForm : Form
     private readonly BackendLogBuffer backendLog;
     private readonly ListView list = new();
     private readonly Button newChatButton = new();
+    private readonly TextBox messageInput = new();
+    private readonly Button sendButton = new();
     private readonly AvatarOverlayForm avatarOverlay;
     private readonly Panel avatarVisual = new();
     private readonly Button avatarZoomButton = new();
@@ -313,6 +315,27 @@ internal sealed class SessionListForm : Form
         // of the rail. Matches #538's own top-to-bottom rail order.
 
         var chatArea = new Panel { Dock = DockStyle.Fill, BackColor = DarkTheme.Background };
+        var composer = new Panel { Dock = DockStyle.Bottom, Height = 48, BackColor = DarkTheme.Panel, Padding = new Padding(8) };
+        messageInput.Dock = DockStyle.Fill;
+        messageInput.BorderStyle = BorderStyle.FixedSingle;
+        messageInput.BackColor = DarkTheme.Panel2;
+        messageInput.ForeColor = DarkTheme.Text;
+        messageInput.Font = new Font("Segoe UI", 11F);
+        messageInput.PlaceholderText = "Напишите сообщение...";
+        messageInput.KeyDown += async (_, e) =>
+        {
+            if (e.KeyCode != Keys.Enter) return;
+            e.SuppressKeyPress = true;
+            await SendMessageAsync();
+        };
+        sendButton.Text = "Отправить";
+        sendButton.Dock = DockStyle.Right;
+        sendButton.Width = 105;
+        sendButton.Click += async (_, _) => await SendMessageAsync();
+        DarkTheme.ApplyButton(sendButton);
+        composer.Controls.Add(sendButton);
+        composer.Controls.Add(messageInput);
+        chatArea.Controls.Add(composer);
         chatArea.Controls.Add(chatLog);
 
         // Same collapse toggle as Claude's own UI, and the design
@@ -366,6 +389,27 @@ internal sealed class SessionListForm : Form
         // thread call ShowSessionList() -- and touch this form's controls
         // -- directly). Same pattern as ArtifactViewerForm/QuickEntryForm.
         _ = Handle;
+    }
+
+    private async Task SendMessageAsync()
+    {
+        var text = messageInput.Text.Trim();
+        if (text.Length == 0) return;
+        messageInput.Enabled = false;
+        sendButton.Enabled = false;
+        try
+        {
+            if (await voiceLoop.SubmitTypedCommandAsync(text))
+            {
+                messageInput.Clear();
+            }
+        }
+        finally
+        {
+            messageInput.Enabled = true;
+            sendButton.Enabled = true;
+            messageInput.Focus();
+        }
     }
 
     private Button MakeRailButton(string icon, string tooltip)

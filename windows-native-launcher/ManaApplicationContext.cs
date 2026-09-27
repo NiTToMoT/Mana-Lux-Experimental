@@ -458,6 +458,17 @@ internal sealed class ManaApplicationContext : ApplicationContext
     // down over a missing model file.
     private static WakeWordClassifier? TryLoadWakeWordClassifier(string rootDir, float threshold)
     {
+        // The bundled acoustic classifier was trained for the English wake
+        // word. For other Whisper languages, let the transcript matcher make
+        // the decision so a spoken local-language name reaches Whisper.
+        var whisperLanguage = Environment.GetEnvironmentVariable("WHISPER_LANGUAGE");
+        if (!string.IsNullOrWhiteSpace(whisperLanguage)
+            && !string.Equals(whisperLanguage, "en", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine($"WakeWordClassifier: disabled for Whisper language {whisperLanguage}.");
+            return null;
+        }
+
         var wakeWordDir = Path.Combine(rootDir, "windows-native-launcher", "assets", "wakeword");
         var melspecPath = Path.Combine(wakeWordDir, "melspectrogram.onnx");
         var embeddingPath = Path.Combine(wakeWordDir, "embedding_model.onnx");

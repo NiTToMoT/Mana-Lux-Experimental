@@ -39,6 +39,7 @@ public class WakeWordMatcherTests
     public void ExtractWakeCommand_ReturnsTextFollowingExactWakeWord()
     {
         Assert.Equal("what time is it", WakeWordMatcher.ExtractWakeCommand("mana, what time is it"));
+        Assert.Equal("привет", WakeWordMatcher.ExtractWakeCommand("Мана, привет"));
     }
 
     [Fact]

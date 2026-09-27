@@ -20,6 +20,7 @@ internal static class WakeWordMatcher
         "ma na",
         "mah na",
         "my na",
+        "мана",
         "wake up",
         "wake-up",
     };
